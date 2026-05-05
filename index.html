@@ -885,16 +885,39 @@ function initMusic() {
 // Preload first track before any user interaction
 loadTrack(0);
 
-// Wait for audio to be ready before enabling the button
-audio.addEventListener('canplaythrough', function onReady() {
-  audio.removeEventListener('canplaythrough', onReady);
+// Wait for at least ~40% of audio to buffer before enabling the button
+let btnEnabled = false;
+function enableIntroBtn() {
+  if (btnEnabled) return;
+  btnEnabled = true;
   const btn = document.getElementById('introBtn');
   btn.disabled = false;
   btn.style.opacity = '';
   btn.style.cursor = '';
   btn.textContent = '🌸 打开回忆';
   document.getElementById('introHint').textContent = '🎵 音乐已准备好，点进去就会自动播放～记得先调好音量哦';
+}
+
+function checkBufferedProgress() {
+  if (btnEnabled) return;
+  if (audio.buffered.length > 0 && audio.duration > 0) {
+    const loaded = audio.buffered.end(audio.buffered.length - 1);
+    const ratio = loaded / audio.duration;
+    // Enable when ~40% loaded OR at least can play (whichever comes first)
+    if (ratio >= 0.4) {
+      enableIntroBtn();
+      return;
+    }
+  }
+  requestAnimationFrame(checkBufferedProgress);
+}
+// Fallback: if audio can play (first few seconds buffered), enable too
+audio.addEventListener('canplay', function onCanPlay() {
+  audio.removeEventListener('canplay', onCanPlay);
+  enableIntroBtn();
 });
+// Start checking buffer progress
+checkBufferedProgress();
 
 initDecor();
 buildMemories();
