@@ -782,7 +782,7 @@ function buildMemories() {
     } else {
       const descIdx = MATCH[ref];
       const desc = NEW_DESCS[descIdx];
-      const ext = ref === 1 ? 'png' : 'jpg';
+      const ext = 'jpg';
       mem = {
         file: `new_${String(ref).padStart(2, '0')}.${ext}`,
         emoji: desc.emoji,
@@ -813,7 +813,7 @@ function buildMemories() {
   });
 }
 
-// ===== MUSIC PLAYER (HTML5 Audio + Local MP3s) =====
+// ===== MUSIC PLAYER (XHR Preload → Blob URL — no streaming stutter!) =====
 const SONGS = [
   { name: '读心术', artist: '卓文萱', file: '01_读心术.mp3' },
   { name: '将故事写成我们', artist: '林俊杰', file: '02_将故事写成我们.mp3' }
@@ -824,20 +824,66 @@ let isPlaying = false;
 const audio = document.getElementById('audioPlayer');
 const playBtn = document.getElementById('mainPlayBtn');
 const progressBar = document.getElementById('progressBar');
+const blobCache = {};  // '01_读心术.mp3' → blobURL
 
-function loadTrack(idx) {
+/** Preload one song via XHR → Blob → Blob URL. Returns a promise. */
+function preloadSong(file) {
+  if (blobCache[file]) return Promise.resolve(blobCache[file]);
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('GET', 'music/' + file, true);
+    xhr.responseType = 'blob';
+    xhr.onload = () => {
+      if (xhr.status === 200) {
+        const blob = xhr.response;
+        const url = URL.createObjectURL(blob);
+        blobCache[file] = url;
+        resolve(url);
+      } else {
+        reject(new Error('XHR failed: ' + xhr.status));
+      }
+    };
+    xhr.onerror = () => reject(new Error('XHR network error'));
+    xhr.onprogress = (e) => {
+      if (e.lengthComputable) {
+        const pct = Math.round(e.loaded / e.total * 100);
+        updateDownloadProgress(pct);
+      }
+    };
+    xhr.send();
+  });
+}
+
+/** Preload second song in background (while first is playing) */
+function preloadSecondSong() {
+  const s = SONGS[1 % SONGS.length];
+  if (!blobCache[s.file]) {
+    preloadSong(s.file).catch(() => {});  // background, errors OK
+  }
+}
+
+function loadTrack(idx, fromBlob) {
   currentTrack = (idx + SONGS.length) % SONGS.length;
   const s = SONGS[currentTrack];
-  audio.src = 'music/' + s.file;
+  if (blobCache[s.file] && fromBlob !== false) {
+    audio.src = blobCache[s.file];
+  } else {
+    audio.src = 'music/' + s.file;
+  }
   document.getElementById('playerSong').textContent = s.name;
   document.getElementById('playerArtist').textContent = s.artist;
   audio.load();
   if (isPlaying) audio.play();
   updateTimeDisplay();
+  // Preload next song in background
+  const nextIdx = (currentTrack + 1) % SONGS.length;
+  const next = SONGS[nextIdx];
+  if (!blobCache[next.file]) {
+    preloadSong(next.file).catch(() => {});
+  }
 }
 
 function togglePlay() {
-  if (audio.src.endsWith('/')) { loadTrack(0); }
   if (audio.paused) {
     audio.play();
   } else {
@@ -877,15 +923,10 @@ audio.addEventListener('loadedmetadata', updateTimeDisplay);
 audio.volume = 0.25;
 
 function initMusic() {
-  // Audio source already preloaded, just play
   audio.play().catch(() => {});
 }
 
-// ===== START =====
-// Preload first track before any user interaction
-loadTrack(0);
-
-// Wait for at least ~40% of audio to buffer before enabling the button
+// ===== PRELOAD FIRST SONG COMPLETELY BEFORE ENABLING BUTTON =====
 let btnEnabled = false;
 function enableIntroBtn() {
   if (btnEnabled) return;
@@ -898,26 +939,27 @@ function enableIntroBtn() {
   document.getElementById('introHint').textContent = '🎵 音乐已准备好，点进去就会自动播放～记得先调好音量哦';
 }
 
-function checkBufferedProgress() {
+function updateDownloadProgress(pct) {
   if (btnEnabled) return;
-  if (audio.buffered.length > 0 && audio.duration > 0) {
-    const loaded = audio.buffered.end(audio.buffered.length - 1);
-    const ratio = loaded / audio.duration;
-    // Enable when ~40% loaded OR at least can play (whichever comes first)
-    if (ratio >= 0.4) {
-      enableIntroBtn();
-      return;
-    }
+  const btn = document.getElementById('introBtn');
+  if (pct < 100) {
+    btn.textContent = '📥 加载音乐 ' + pct + '%';
   }
-  requestAnimationFrame(checkBufferedProgress);
 }
-// Fallback: if audio can play (first few seconds buffered), enable too
-audio.addEventListener('canplay', function onCanPlay() {
-  audio.removeEventListener('canplay', onCanPlay);
+
+// Start preloading first song as blob (complete download)
+const firstSong = SONGS[0];
+preloadSong(firstSong.file).then((blobUrl) => {
+  // Set audio source to blob URL (fully in memory, no stutter)
+  loadTrack(0, true);
+  enableIntroBtn();
+  // Preload second song in background
+  preloadSecondSong();
+}).catch(() => {
+  // Fallback: use streaming if XHR fails
+  loadTrack(0, false);
   enableIntroBtn();
 });
-// Start checking buffer progress
-checkBufferedProgress();
 
 initDecor();
 buildMemories();
