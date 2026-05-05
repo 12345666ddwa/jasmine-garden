@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🔄 照片排序工具 · 茉莉花园</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: #1c0a0e;
+  color: #fff;
+  padding: 20px;
+  max-width: 900px; margin: 0 auto;
+}
+h1 { font-size: 1.2em; font-weight: 300; text-align: center; margin-bottom: 5px; color: #f9a8d4; letter-spacing: 2px; }
+h2 { font-size: 0.85em; font-weight: 300; text-align: center; margin-bottom: 20px; color: rgba(255,255,255,0.3); }
+h3 { font-size: 0.8em; font-weight: 400; color: rgba(255,255,255,0.4); margin: 20px 0 10px; letter-spacing: 1px; }
+.section { background: rgba(255,255,255,0.02); border: 1px solid rgba(249,168,212,0.06); border-radius: 12px; padding: 16px; margin-bottom: 20px; }
+
+/* TIMELINE */
+.timeline { list-style: none; }
+.timeline-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 8px 10px;
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+  transition: background 0.2s;
+  cursor: default;
+}
+.timeline-item:hover { background: rgba(249,168,212,0.03); }
+.timeline-item .pos {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: rgba(249,168,212,0.08);
+  color: rgba(249,168,212,0.5);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.7em; flex-shrink: 0;
+}
+.timeline-item .thumb {
+  width: 48px; height: 48px; border-radius: 8px; object-fit: cover; flex-shrink: 0;
+}
+.timeline-item .info { flex: 1; min-width: 0; }
+.timeline-item .info .label { font-size: 0.75em; color: rgba(255,255,255,0.5); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.timeline-item .info .desc { font-size: 0.65em; color: rgba(255,255,255,0.25); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.timeline-item .date-badge {
+  font-size: 0.6em; color: rgba(249,168,212,0.3);
+  background: rgba(249,168,212,0.04);
+  padding: 2px 8px; border-radius: 10px; white-space: nowrap;
+}
+.timeline-item .file-label {
+  font-size: 0.55em; color: rgba(255,255,255,0.15); white-space: nowrap;
+}
+
+/* UNSORTED POOL */
+.pool {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px;
+}
+.pool-item {
+  background: rgba(255,255,255,0.02); border: 1px solid rgba(249,168,212,0.08); border-radius: 10px;
+  padding: 10px; display: flex; flex-direction: column; gap: 6px;
+  transition: all 0.3s;
+}
+.pool-item:hover { border-color: rgba(249,168,212,0.2); background: rgba(249,168,212,0.03); }
+.pool-item .thumb { width: 100%; height: 120px; border-radius: 6px; object-fit: cover; }
+.pool-item .label { font-size: 0.7em; color: rgba(255,255,255,0.5); }
+.pool-item .desc { font-size: 0.6em; color: rgba(255,255,255,0.25); line-height: 1.4; }
+.pool-item .insert-row {
+  display: flex; gap: 6px; align-items: center; margin-top: 4px;
+}
+.pool-item .insert-row input {
+  width: 60px; padding: 4px 6px; border: 1px solid rgba(249,168,212,0.15);
+  border-radius: 6px; background: rgba(255,255,255,0.03); color: #fff;
+  font-size: 0.7em; font-family: inherit; text-align: center;
+}
+.pool-item .insert-row button {
+  flex: 1; padding: 4px 8px; border: none; border-radius: 6px;
+  background: rgba(249,168,212,0.1); color: #f9a8d4;
+  font-size: 0.65em; cursor: pointer; font-family: inherit;
+  transition: background 0.2s;
+}
+.pool-item .insert-row button:hover { background: rgba(249,168,212,0.2); }
+.pool-item.inserted { opacity: 0.3; pointer-events: none; }
+
+/* BUTTONS */
+.btn-row { text-align: center; margin: 20px 0; }
+.btn-confirm {
+  padding: 12px 40px; border: 1px solid rgba(249,168,212,0.2);
+  border-radius: 50px; background: rgba(249,168,212,0.06);
+  color: #f9a8d4; font-size: 0.85em; cursor: pointer;
+  font-family: inherit; transition: all 0.3s; letter-spacing: 1px;
+}
+.btn-confirm:hover { background: rgba(249,168,212,0.12); border-color: rgba(249,168,212,0.4); }
+
+/* OUTPUT */
+.output-box {
+  display: none; margin-top: 20px;
+  background: rgba(255,255,255,0.02); border: 1px solid rgba(249,168,212,0.1);
+  border-radius: 12px; padding: 16px;
+}
+.output-box.show { display: block; }
+.output-box pre {
+  font-size: 0.6em; color: rgba(255,255,255,0.5);
+  white-space: pre-wrap; word-break: break-all;
+  font-family: 'Courier New', monospace;
+  max-height: 300px; overflow-y: auto;
+  background: rgba(0,0,0,0.2); padding: 12px; border-radius: 8px;
+  line-height: 1.6;
+}
+.output-box .hint { font-size: 0.7em; color: rgba(255,255,255,0.3); margin-bottom: 8px; }
+
+/* Empty state */
+.empty-hint { font-size: 0.7em; color: rgba(255,255,255,0.15); text-align: center; padding: 20px; }
+</style>
+</head>
+<body>
+
+<h1>🌸 照片排序工具</h1>
+<h2>有日期的已按时间排好 → 把没日期的插进去</h2>
+
+<!-- TIMELINE (dated photos) -->
+<h3>📅 按时间排序的照片</h3>
+<div class="section">
+  <div class="timeline" id="timeline"></div>
+</div>
+
+<!-- UNSORTED POOL -->
+<h3>❓ 没有日期的照片（插入到上方时间线）</h3>
+<div class="section">
+  <div id="emptyPool" class="empty-hint">全部已插入完成 ✓</div>
+  <div class="pool" id="unsortedPool"></div>
+</div>
+
+<!-- CONFIRM BUTTON -->
+<div class="btn-row">
+  <button class="btn-confirm" onclick="confirmOrder()">✅ 确认排序</button>
+</div>
+
+<!-- OUTPUT -->
+<div class="output-box" id="outputBox">
+  <div class="hint">💡 复制下面这个数组发给AI，它就知道你排好的顺序了</div>
+  <pre id="outputContent"></pre>
+  <div class="hint" style="margin-top:10px;">格式说明：数组顺序 = 照片显示顺序（从最开始到最近），每组包含文件名和描述文字</div>
+</div>
+
+<script>
+// ===== ALL PHOTO DATA =====
+// Each photo: { file, emoji, text, date, type, num }
+// type: 'old' or 'new'; num: photo number for new photos
+
+// Old photos (no dates)
+const OLD_PHOTOS = [
+  { file: 'old_01.jpg', emoji: '🤍💫', text: '我们的日常，平淡却最珍贵。每一个平凡的日子因为有你都变得闪闪发亮。', date: null, type: 'old', num: 1 },
+  { file: 'old_02.jpg', emoji: '🐶💜', text: '在大理去狗咖的那天。你蹲在地上喂狗狗们，它们围着你转、你笑得特别开心——那个画面比任何风景都好看。', date: null, type: 'old', num: 2 },
+  { file: 'old_03.jpg', emoji: '👸💗', text: '在大理拍了超美的照片，像迪士尼在逃公主一样美丽——你站在那儿，每一帧都像画报一样，我怎么都看不够。', date: null, type: 'old', num: 3 },
+  { file: 'old_04.jpg', emoji: '📸💕', text: '在大理拍的美照，特别漂亮。你站在那儿，阳光刚好落在你身上——你说你特别喜欢这一张，我也是，怎么看都看不够。', date: null, type: 'old', num: 4 },
+  { file: 'old_05.jpg', emoji: '💑💫', text: '在大理一起拍的合照。我们互相望着对方笑，那一刻好像旁边的一切都不存在了——只有你和我。', date: null, type: 'old', num: 5 },
+  { file: 'old_06.jpg', emoji: '🌊🤍', text: '一起在大理拍的合照。洱海边、阳光下，我们靠在一起——每一张都是我最珍惜的画面。', date: null, type: 'old', num: 6 },
+  { file: 'old_07.jpg', emoji: '📚🥤', text: '一起期末复习的时候，点了茉酸奶一起喝。你吸着酸奶皱着眉头看题的样子，又认真又可爱——那段日子虽然累，但有你在就很好。', date: null, type: 'old', num: 7 },
+  { file: 'old_08.jpg', emoji: '🎂🎉', text: '我第一次给你过生日的照片。当时精心准备了惊喜，你看到的时候眼睛都亮了——那一刻我心里比什么都开心。', date: null, type: 'old', num: 8 },
+  { file: 'old_09.jpg', emoji: '💌🤍', text: '写不尽的回忆。还有很多很多没来得及记录的美好时刻——每一帧，都好好收在心里了。', date: null, type: 'old', num: 9 }
+];
+
+// New photos with dates
+const NEW_PHOTOS = [
+  { file: 'new_01.png', emoji: '🎢🌅', text: '在过山车上看日落。俯冲的时候你紧紧抓着我的手尖叫，夕阳把整片天空染成橘粉色——刺激和浪漫，同一天都体验到了。', date: '2026-01-14', type: 'new', num: 1 },
+  { file: 'new_02.jpg', emoji: '🧩💗', text: '我们一起拼积木。过程很波折，零件撒了一地，拼了拆、拆了又拼，但最后完成的时候特别有成就感——就像我们，跌跌撞撞却依然美好。', date: '2026-04-12', type: 'new', num: 2 },
+  { file: 'new_03.jpg', emoji: '✈️🚄', text: '牵着手一起坐飞机、坐火车。无论是飞上云端还是穿过田野，只要手是牵着的，去哪儿都是风景。', date: '2026-04-12', type: 'new', num: 3 },
+  { file: 'new_04.jpg', emoji: '🛒💕', text: '一起玩超市。看着超市从一个小摊慢慢扩张，货架越来越满，就像我们的感情，一点一点在积累、在生长。', date: '2026-01-30', type: 'new', num: 4 },
+  { file: 'new_05.jpg', emoji: '🎡📸', text: '一起去游乐园拍了拍立得。照片慢慢浮现出我们笑容的瞬间——每一张都是独一无二的宝物。', date: '2026-01-14', type: 'new', num: 5 },
+  { file: 'new_06.jpg', emoji: '📝🤭', text: '你考试的时候我偷偷拍你。你专注写题的样子特别认真，眉头偶尔皱一下——我在后面偷偷笑了好久，好可爱啊。', date: '2026-01-07', type: 'new', num: 6 },
+  { file: 'new_07.jpg', emoji: '🎂🎉', text: '一周年的惊喜蛋糕。他悄悄准备的，但不小心被我提前发现了——不过看到蛋糕的那一刻还是很开心，蛋糕很甜，但心意更甜。', date: '2025-12-16', type: 'new', num: 7 },
+  { file: 'new_09.jpg', emoji: '🚗💥', text: '我们一起开碰碰车。你一边尖叫一边乱转方向盘，撞到我的时候笑得特别大声——公园里到处都是你的笑声。', date: '2025-11-22', type: 'new', num: 9 },
+  { file: 'new_10.jpg', emoji: '🎈💕', text: '我为你准备的惊喜表白。吹了好多好多气球，布置了很久很久。你推开门那一刻的表情，是我这辈子见过最美的画面。', date: '2025-11-21', type: 'new', num: 10 },
+  { file: 'new_11.jpg', emoji: '🌾🎮', text: '我们一起玩星露谷。一起种地、钓鱼、下矿洞，你负责规划农场布局，我负责打架——最好的搭档，无论在游戏里还是现实中。', date: '2025-11-11', type: 'new', num: 11 },
+  { file: 'new_12.jpg', emoji: '🎵📸', text: '面对难题，我们互相安慰、一起想办法。你给我的鼓励和拥抱，是那个时候最温暖的力量。最后器乐社大家一起拍了大合照——那段日子，我很怀念。', date: '2025-11-08', type: 'new', num: 12 },
+  { file: 'new_13.jpg', emoji: '🍵🥩', text: '一起出去围炉煮茶、吃烤肉。炭火暖暖的，茶香混着肉香，你一边喊烫一边往嘴里塞——这种烟火气里的幸福，最真实。', date: '2025-10-18', type: 'new', num: 13 },
+  { file: 'new_14.jpg', emoji: '🧁✨', text: '我们一起做的小蛋糕。面粉撒得到处都是，我们做的蛋糕歪歪扭扭的——但那是世界上最好吃的蛋糕。', date: '2025-09-12', type: 'new', num: 14 },
+  { file: 'new_15.jpg', emoji: '🏯📷', text: '和翔翔一起去古镇，给你拍古风照片。你穿着古装站在桥上的样子，像从画里走出来的人——快门按下的每一帧都是珍藏。', date: '2025-08-17', type: 'new', num: 15 },
+  { file: 'new_16.jpg', emoji: '👫📋', text: '一起去做社会实践。住的环境比较糟糕，太阳也很大，每天跑下来真的很累——但你一直在我身边，再累也值得。', date: '2025-08-05', type: 'new', num: 16 },
+  { file: 'new_17.jpg', emoji: '🚶‍♂️💫', text: '牵着手一起远行。不管去哪里，只要你在身边，陌生的城市也变得温暖。我们一起走过的路，每一步都算数。', date: '2025-08-03', type: 'new', num: 17 },
+  { file: 'new_18.jpg', emoji: '🎤✨', text: '一起看活的薛之谦！全场大合唱的时候你激动的样子，你跟着哼唱的声音——那场演出，是我陪你看过最棒的演唱会。', date: '2025-07-05', type: 'new', num: 18 },
+  { file: 'new_19.jpg', emoji: '⛸️❄️', text: '我们一起溜冰。你扶着栏杆慢慢挪的样子又好笑又可爱，摔倒了坐在地上笑得停不下来——冰场很冷，但心里暖暖的。', date: '2025-05-04', type: 'new', num: 19 },
+  { file: 'new_20.jpg', emoji: '🚗🏫', text: '她陪我考了雅思。考完之后我们坐上了川大的校园观光车，微风拂过，你靠在我身边——那一刻觉得，能和你一起真好。', date: '2025-04-27', type: 'new', num: 20 },
+  { file: 'new_21.jpg', emoji: '🎢🎠', text: '第一次一起去欢乐谷玩。你从过山车上下来腿都软了还笑着说"好好玩"，拉着我又去排下一个项目——跟你在一起，什么都想尝试。', date: '2025-04-13', type: 'new', num: 21 },
+  { file: 'new_22.jpg', emoji: '🌧️🌿', text: '下过雨后的学校，空气里都是青草的味道。我们牵着手一起散步，踩过水洼的时候你笑着跑开——那个傍晚，特别美好。', date: '2025-03-31', type: 'new', num: 22 },
+  { file: 'new_23.jpg', emoji: '💐✨', text: '你给我买的花花。每次你捧着花出现在我面前的时候，花很漂亮，但你眼睛亮亮的样子更漂亮——你送的花，我全都好好收着了。', date: '2025-03-25', type: 'new', num: 23 },
+  { file: 'new_24.jpg', emoji: '💕👕', text: '一起去挑新衣服。你穿着我的外套，戴着我送你的发卡，靠在我肩膀上的时候——那个时候，我感觉自己是世界上最幸福的人。', date: '2025-03-22', type: 'new', num: 24 },
+  { file: 'new_25.jpg', emoji: '🥩😂', text: '和沙汉一起去吃烤肉。他烤的肉味道确实还可以，就是烤的时候手忙脚乱的样子特别搞笑——笑得我们肚皮都疼了。', date: '2025-02-28', type: 'new', num: 25 },
+  { file: 'new_26.jpg', emoji: '🐱💖', text: '一起去猫咖。你蹲在地上喂猫的样子、轻声细语跟猫咪说话的样子——太可爱了。猫咪们围着你转，但在我眼里，你比所有猫咪都可爱一万倍。', date: '2024-12-24', type: 'new', num: 26 },
+  { file: 'new_27.jpg', emoji: '☀️😌', text: '一起在操场晒太阳。你躺在我腿上，阳光暖暖地照在身上，你眯着眼睛像一只晒太阳的小猫——那个下午安安静静的，却是我最珍惜的时刻之一。', date: '2024-12-24', type: 'new', num: 27 },
+  { file: 'new_28.jpg', emoji: '🎤💪', text: '偷偷拍你打辩论的样子。你在台上侃侃而谈、逻辑清晰、气场全开——那一刻觉得你好厉害，心里特别佩服。', date: '2024-11-27', type: 'new', num: 28 },
+  { file: 'new_29.jpg', emoji: '🌅📸', text: '给你拍了日落剪影。你站在夕阳里的轮廓，金色的光勾勒出你的侧脸——我当时觉得特别好看哈哈哈哈哈哈，那可能是我拍过最好的照片。', date: '2024-11-29', type: 'new', num: 29 },
+  { file: 'new_31.jpg', emoji: '🏔️📷', text: '在大理，我们选到了超级满意的海景房，面对着洱海。阳光透过窗子洒进来，你站在窗边回头对我笑——那一瞬间我就知道，这趟旅行值得一辈子记住。', date: '2026-04-07', type: 'new', num: 31 }
+];
+
+// New photos WITHOUT dates
+const UNDATED_NEW = [
+  { file: 'new_30.jpg', emoji: '📱🍳', text: '异地的时候打视频看你做饭、洗碗。你把手机靠在调料瓶上，一边炒菜一边跟我聊天——隔着屏幕都觉得好可爱，好想马上飞到你身边。', date: null, type: 'new', num: 30 },
+  { file: 'new_32.jpg', emoji: '🏛️🎉', text: '我们四个人放假去三星堆玩。青铜面具前我们各种搞怪，四个人一起玩得特别开心——和你们在一起，快乐都加倍了。', date: null, type: 'new', num: 32 },
+  { file: 'new_33.jpg', emoji: '🧣💗', text: '我们的故事，跟半块粉色的暖手宝密切相关。冬天你总是手凉，我把它塞到你手里，你笑着说"一人一半"——从那以后，很多东西都是一人一半了。', date: null, type: 'new', num: 33 }
+];
+
+// Combine all undated
+const UNDATED = [...OLD_PHOTOS, ...UNDATED_NEW];
+
+// Current timeline (dated photos sorted chronologically)
+let timeline = [...NEW_PHOTOS].sort((a, b) => a.date.localeCompare(b.date));
+let undatedPool = [...UNDATED];
+
+function render() {
+  renderTimeline();
+  renderUnsorted();
+}
+
+function renderTimeline() {
+  const el = document.getElementById('timeline');
+  el.innerHTML = timeline.map((p, i) => `
+    <div class="timeline-item">
+      <span class="pos">${i + 1}</span>
+      <img class="thumb" src="photos/${p.file}" alt="">
+      <div class="info">
+        <div class="label">${p.emoji} ${p.type === 'old' ? '旧照' + p.num : '#' + p.num} · ${trunc(p.text, 30)}</div>
+        <div class="desc">${p.text}</div>
+      </div>
+      <span class="date-badge">${p.date || '待定'}</span>
+      <span class="file-label">${p.file}</span>
+    </div>
+  `).join('');
+}
+
+function renderUnsorted() {
+  const el = document.getElementById('unsortedPool');
+  const empty = document.getElementById('emptyPool');
+  if (undatedPool.length === 0) {
+    el.innerHTML = '';
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+  el.innerHTML = undatedPool.map((p, i) => `
+    <div class="pool-item" id="pool-${i}">
+      <img class="thumb" src="photos/${p.file}" alt="">
+      <div class="label">${p.emoji} ${p.type === 'old' ? '旧照' + p.num : '#' + p.num} · ${p.file}</div>
+      <div class="desc">${trunc(p.text, 60)}</div>
+      <div class="insert-row">
+        <input type="number" id="posInput-${i}" min="1" max="${timeline.length + 1}" value="${Math.min(i + 1, timeline.length + 1)}" placeholder="位置">
+        <button onclick="insertPhoto(${i})">插入</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function trunc(s, n) { return s.length > n ? s.slice(0, n) + '…' : s; }
+
+function insertPhoto(idx) {
+  const input = document.getElementById('posInput-' + idx);
+  let pos = parseInt(input.value);
+  if (isNaN(pos) || pos < 1) pos = 1;
+  if (pos > timeline.length + 1) pos = timeline.length + 1;
+  
+  const photo = undatedPool.splice(idx, 1)[0];
+  timeline.splice(pos - 1, 0, photo);
+  render();
+}
+
+function confirmOrder() {
+  if (undatedPool.length > 0) {
+    if (!confirm('还有 ' + undatedPool.length + ' 张照片没插入，确定要确认吗？')) return;
+  }
+  
+  const output = timeline.map((p, i) => {
+    return `  { pos: ${i + 1}, file: '${p.file}', emoji: '${p.emoji}', text: '${p.text.replace(/'/g, "\\'")}' }`;
+  }).join(',\n');
+  
+  document.getElementById('outputContent').textContent = '[\n' + output + '\n]';
+  document.getElementById('outputBox').classList.add('show');
+  document.getElementById('outputBox').scrollIntoView({ behavior: 'smooth' });
+}
+
+// Init
+render();
+</script>
+</body>
+</html>

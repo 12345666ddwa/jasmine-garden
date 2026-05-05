@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>🤍 茉莉花园 · 我们的回忆录</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, 'PingFang SC', 'Microsoft YaHei', 'Hiragino Sans GB', sans-serif;
+  background: #1c0a0e;
+  color: #fff;
+  overflow-x: hidden;
+}
+
+/* ===== DYNAMIC BACKGROUND GRADIENT ===== */
+.bg-gradient {
+  position: fixed; inset: 0; z-index: 0;
+  background: radial-gradient(ellipse at 20% 50%, rgba(249,168,212,0.06) 0%, transparent 50%),
+              radial-gradient(ellipse at 80% 20%, rgba(251,146,60,0.04) 0%, transparent 50%),
+              radial-gradient(ellipse at 50% 80%, rgba(147,51,234,0.04) 0%, transparent 50%);
+  animation: bgShift 20s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+@keyframes bgShift {
+  0% { opacity: 0.6; }
+  50% { opacity: 1; }
+  100% { opacity: 0.6; }
+}
+
+/* ===== STARS ===== */
+.stars { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
+.star {
+  position: absolute; width: 2px; height: 2px;
+  background: #fde68a; border-radius: 50%;
+  animation: twinkle var(--dur) ease-in-out infinite alternate;
+}
+@keyframes twinkle {
+  0% { opacity: 0.1; transform: scale(0.8); }
+  100% { opacity: 0.5; transform: scale(1.2); }
+}
+@keyframes sparkle {
+  0% { opacity: 0; transform: scale(0.5); }
+  50% { opacity: 0.2; transform: scale(1); }
+  100% { opacity: 0; transform: scale(0.5); }
+}
+
+/* ===== FLOATING PETALS ===== */
+.petal-rain { position: fixed; inset: 0; pointer-events: none; z-index: 1; overflow: hidden; }
+.falling-petal {
+  position: absolute; top: -30px; font-size: var(--size); opacity: 0;
+  animation: petalFall var(--dur) linear var(--delay) infinite;
+}
+@keyframes petalFall {
+  0% { opacity: 0; transform: translateY(0) rotate(0deg) translateX(0); }
+  10% { opacity: 0.15; }
+  90% { opacity: 0.1; }
+  100% { opacity: 0; transform: translateY(110vh) rotate(360deg) translateX(var(--sway)); }
+}
+
+/* ===== INTRO SEQUENCE ===== */
+.intro-overlay {
+  position: fixed; inset: 0; z-index: 100;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  background: #1c0a0e;
+  transition: opacity 1.5s ease;
+  padding: 30px;
+}
+.intro-overlay.fade-out { opacity: 0; pointer-events: none; }
+.intro-overlay.hidden { display: none; }
+
+.intro-line {
+  opacity: 0; transform: translateY(30px);
+  transition: all 1.2s cubic-bezier(0.22, 1, 0.36, 1);
+  text-align: center;
+  margin-bottom: 12px;
+}
+.intro-line.show { opacity: 1; transform: translateY(0); }
+.intro-line.big {
+  font-size: 2.2em; font-weight: 800;
+  background: linear-gradient(135deg, #f9a8d4, #fda4af, #fb923c);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.intro-line.medium { font-size: 1.1em; color: rgba(255,255,255,0.6); font-weight: 400; line-height: 1.8; }
+.intro-line.small { font-size: 0.85em; color: rgba(255,255,255,0.3); }
+.intro-line.hint {
+  font-size: 0.75em; color: rgba(249,168,212,0.3);
+  margin-top: 16px;
+  letter-spacing: 1px;
+}
+.intro-line .jasmine-deco { font-size: 2em; display: block; margin-bottom: 8px; }
+
+.intro-btn {
+  margin-top: 40px; opacity: 0;
+  padding: 16px 48px;
+  border: 1px solid rgba(249,168,212,0.2);
+  border-radius: 50px;
+  background: rgba(249,168,212,0.06);
+  color: #f9a8d4;
+  font-size: 1em; font-weight: 600; cursor: pointer;
+  font-family: inherit;
+  transition: all 0.4s ease;
+}
+.intro-btn.show { opacity: 1; }
+.intro-btn:hover {
+  background: rgba(249,168,212,0.12);
+  border-color: rgba(249,168,212,0.4);
+  transform: scale(1.04);
+}
+
+/* ===== MAIN ALBUM ===== */
+.main-content { opacity: 0; transition: opacity 1.5s ease; padding-top: 30px; }
+.main-content.show { opacity: 1; }
+
+.section-title {
+  text-align: center; padding: 60px 20px 30px;
+  position: relative; z-index: 2;
+}
+.section-title .deco { font-size: 2em; display: block; margin-bottom: 6px; }
+.section-title h2 {
+  font-size: 1.5em; font-weight: 300;
+  color: rgba(255,255,255,0.7);
+  letter-spacing: 4px;
+}
+
+/* ===== MEMORY CARDS ===== */
+.memory-container {
+  max-width: 800px; margin: 0 auto; padding: 0 20px 40px;
+  position: relative; z-index: 2;
+}
+
+.memory-card {
+  display: flex; gap: 24px;
+  margin-bottom: 50px;
+  opacity: 0; transform: translateY(40px);
+  transition: all 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+  position: relative;
+}
+.memory-card.visible { opacity: 1; transform: translateY(0); }
+
+.memory-card.reverse { flex-direction: row-reverse; }
+
+.memory-card .photo-wrap {
+  flex: 0 0 48%;
+  border-radius: 16px;
+  overflow: hidden;
+  position: relative;
+  cursor: pointer;
+  box-shadow: 0 4px 30px rgba(0,0,0,0.3);
+  transition: transform 0.4s ease;
+}
+.memory-card .photo-wrap:hover { transform: scale(1.02); }
+.photo-wrap img {
+  width: 100%; height: 320px;
+  object-fit: cover; display: block;
+  transition: transform 0.6s ease;
+}
+.photo-wrap:hover img { transform: scale(1.05); }
+
+img.rotate-left {
+  transform: rotate(-90deg) scale(0.75);
+  object-fit: contain;
+}
+
+.photo-wrap .photo-num {
+  position: absolute; top: 10px; left: 10px;
+  background: rgba(0,0,0,0.4); backdrop-filter: blur(10px);
+  padding: 4px 12px; border-radius: 20px;
+  font-size: 0.7em; color: rgba(255,255,255,0.5);
+}
+
+.memory-card .desc-wrap {
+  flex: 1; display: flex; flex-direction: column; justify-content: center;
+}
+.desc-wrap .emoji-row { font-size: 1.4em; margin-bottom: 4px; letter-spacing: 2px; }
+.desc-wrap .memory-text {
+  font-size: 0.95em; line-height: 1.8;
+  color: rgba(255,255,255,0.7);
+  font-weight: 300;
+}
+.desc-wrap .memory-divider {
+  width: 30px; height: 2px;
+  background: linear-gradient(90deg, #f9a8d4, transparent);
+  margin: 10px 0;
+}
+
+/* ===== FULL WIDTH CARDS (alternating) ===== */
+.memory-card.full-width { flex-direction: column; }
+.memory-card.full-width .photo-wrap { flex: none; }
+.memory-card.full-width .photo-wrap img { height: 420px; }
+.memory-card.full-width .desc-wrap { padding: 16px 0; text-align: center; }
+.memory-card.full-width .memory-divider { margin: 10px auto; }
+
+/* ===== LIGHTBOX ===== */
+.lightbox {
+  position: fixed; inset: 0; z-index: 80;
+  display: none;
+  align-items: center; justify-content: center;
+  background: rgba(0,0,0,0.92);
+  backdrop-filter: blur(16px);
+  padding: 20px;
+}
+.lightbox.show { display: flex; }
+.lightbox img {
+  max-width: 90vw; max-height: 85vh;
+  border-radius: 12px;
+  box-shadow: 0 8px 60px rgba(0,0,0,0.5);
+  animation: lightboxIn 0.3s ease;
+}
+@keyframes lightboxIn {
+  0% { transform: scale(0.9); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+.lightbox .close-lb {
+  position: fixed; top: 20px; right: 20px;
+  width: 40px; height: 40px;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 50%;
+  background: rgba(0,0,0,0.4);
+  color: rgba(255,255,255,0.5);
+  font-size: 1.2em;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.3s;
+  font-family: inherit;
+}
+.lightbox .close-lb:hover { background: rgba(255,255,255,0.1); color: #fff; }
+
+/* ===== ENDING SEQUENCE ===== */
+.ending-section {
+  min-height: 100vh;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  text-align: center;
+  padding: 60px 30px;
+  position: relative; z-index: 2;
+  background: transparent;
+  transition: background 2s ease;
+}
+.ending-section.darken {
+  background: #0a0305;
+}
+
+.ending-line {
+  opacity: 0; transform: translateY(20px);
+  transition: all 1.5s cubic-bezier(0.22, 1, 0.36, 1);
+  margin-bottom: 8px;
+}
+.ending-line.show { opacity: 1; transform: translateY(0); }
+
+.ending-line.main {
+  font-size: 1.3em; font-weight: 600; line-height: 2;
+  color: rgba(255,255,255,0.8);
+  letter-spacing: 3px;
+}
+.ending-line.sub {
+  font-size: 0.85em;
+  color: rgba(255,255,255,0.2);
+  margin-top: 30px;
+  letter-spacing: 1px;
+}
+
+/* ===== MUSIC PLAYER ===== */
+/* ===== CUSTOM MUSIC PLAYER ===== */
+.music-player {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  z-index: 50;
+  background: rgba(28,10,14,0.88);
+  backdrop-filter: blur(24px);
+  border-top: 1px solid rgba(249,168,212,0.08);
+  padding: 0;
+  transition: transform 0.3s ease;
+}
+.music-player .progress-wrap {
+  width: 100%; height: 3px;
+  background: rgba(255,255,255,0.04);
+  cursor: pointer;
+  position: relative;
+}
+.music-player .progress-wrap .progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #f9a8d4, #fda4af);
+  width: 0%;
+  transition: width 0.2s linear;
+  position: relative;
+}
+.music-player .progress-wrap .progress-bar::after {
+  content: '';
+  position: absolute; right: -5px; top: -3px;
+  width: 9px; height: 9px; border-radius: 50%;
+  background: #f9a8d4;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.music-player .progress-wrap:hover .progress-bar::after {
+  opacity: 1;
+}
+.music-player .controls-wrap {
+  display: flex; align-items: center;
+  padding: 8px 16px 10px;
+  gap: 12px;
+  max-width: 600px; margin: 0 auto;
+}
+.music-player .ctrl-btn {
+  background: none; border: none;
+  color: rgba(255,255,255,0.35);
+  cursor: pointer;
+  font-size: 0.9em;
+  padding: 4px 6px;
+  font-family: inherit;
+  transition: all 0.2s;
+  line-height: 1;
+}
+.music-player .ctrl-btn:hover { color: #f9a8d4; }
+.music-player .ctrl-btn.play-main {
+  width: 36px; height: 36px;
+  border: 1px solid rgba(249,168,212,0.15);
+  border-radius: 50%;
+  font-size: 0.85em;
+  display: flex; align-items: center; justify-content: center;
+  color: #f9a8d4;
+}
+.music-player .ctrl-btn.play-main:hover {
+  background: rgba(249,168,212,0.08);
+  border-color: rgba(249,168,212,0.3);
+}
+.music-player .song-info {
+  flex: 1; min-width: 0;
+  display: flex; flex-direction: column;
+  gap: 1px;
+}
+.music-player .song-name {
+  font-size: 0.75em; color: rgba(255,255,255,0.6);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.music-player .song-artist {
+  font-size: 0.6em; color: rgba(255,255,255,0.25);
+}
+.music-player .time-display {
+  font-size: 0.6em; color: rgba(255,255,255,0.2);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ===== EASTER EGG ===== */
+.easter-egg-spot {
+  position: fixed; bottom: 60px; right: 20px;
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+  z-index: 45;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.easter-egg-spot:hover { opacity: 1; }
+
+.easter-modal {
+  position: fixed; inset: 0; z-index: 90;
+  display: none;
+  align-items: center; justify-content: center;
+  background: rgba(0,0,0,0.9);
+  backdrop-filter: blur(20px);
+  padding: 30px;
+}
+.easter-modal.show { display: flex; }
+.easter-modal .content {
+  text-align: center;
+  max-width: 400px;
+}
+.easter-modal .content .big { font-size: 4em; margin-bottom: 12px; }
+.easter-modal .content h3 {
+  font-size: 1.3em;
+  background: linear-gradient(135deg, #f9a8d4, #fda4af);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  margin-bottom: 10px;
+}
+.easter-modal .content p {
+  color: rgba(255,255,255,0.5);
+  font-size: 0.85em; line-height: 1.8;
+}
+.easter-modal .close-easter {
+  margin-top: 20px;
+  padding: 10px 28px;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 50px;
+  background: transparent;
+  color: rgba(255,255,255,0.3);
+  font-size: 0.8em;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.3s;
+}
+.easter-modal .close-easter:hover { background: rgba(255,255,255,0.05); color: #fff; }
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 640px) {
+  .intro-line.big { font-size: 1.5em; }
+  .intro-line.medium { font-size: 0.9em; }
+  .memory-card { flex-direction: column !important; gap: 12px; margin-bottom: 36px; }
+  .memory-card .photo-wrap { flex: none; }
+  .photo-wrap img { height: 260px !important; }
+  .desc-wrap .memory-text { font-size: 0.85em; }
+  .memory-card.full-width .photo-wrap img { height: 300px !important; }
+  .ending-line.main { font-size: 1em; }
+  .music-bar { padding: 6px 10px; gap: 8px; }
+  .music-bar .song-name { font-size: 0.72em; }
+}
+
+/* ===== SCROLL INDICATOR ===== */
+.scroll-hint {
+  position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
+  z-index: 15;
+  text-align: center;
+  opacity: 0;
+  transition: opacity 1s ease;
+  pointer-events: none;
+}
+.scroll-hint.show { opacity: 1; }
+.scroll-hint .arrow {
+  display: block;
+  font-size: 1.4em;
+  animation: bounceArrow 2s ease-in-out infinite;
+  color: rgba(249,168,212,0.2);
+}
+.scroll-hint .hint-text {
+  font-size: 0.65em; color: rgba(255,255,255,0.12);
+  letter-spacing: 2px; margin-top: 4px;
+}
+@keyframes bounceArrow {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(8px); }
+}
+</style>
+</head>
+<body>
+
+<!-- Stars -->
+<div class="stars" id="stars"></div>
+<!-- Dynamic gradient overlay -->
+<div class="bg-gradient"></div>
+<!-- Floating petals -->
+<div class="petal-rain" id="petalRain"></div>
+<!-- INTRO OVERLAY -->
+<div class="intro-overlay" id="introOverlay">
+  <div class="intro-line" id="introLine0">
+    <span class="jasmine-deco">🤍</span>
+  </div>
+  <div class="intro-line big" id="introLine1">你好，雅丽</div>
+  <div class="intro-line medium" id="introLine2">这是一封，独属于我们俩的回忆录 ✉️</div>
+  <div class="intro-line small" id="introLine3">—— 高兴</div>
+  <button class="intro-btn" id="introBtn" disabled style="opacity:0.3;cursor:default;">⏳ 正在加载音乐…</button>
+  <div class="intro-line hint" id="introHint">🎵 我还准备了音乐，正在加载中，请稍等～</div>
+</div>
+
+<!-- MAIN CONTENT -->
+<div class="main-content" id="mainContent">
+
+  <div class="section-title">
+    <span class="deco">🌸💕🌸</span>
+    <h2>我们的故事</h2>
+  </div>
+
+  <div class="memory-container" id="memoryContainer">
+    <!-- Memories will be injected by JS -->
+  </div>
+
+  <!-- ENDING -->
+  <div class="ending-section" id="endingSection">
+    <div class="ending-line main" id="endLine0">最后在这个浩瀚的宇宙</div>
+    <div class="ending-line main" id="endLine1">我搭建了这个永久的，独属于我们的"茉莉花园"</div>
+    <div class="ending-line main" id="endLine2">封存着我们一部分的回忆</div>
+    <div class="ending-line main" id="endLine3">记录着我们一部分的爱情</div>
+    <div class="ending-line main" id="endLine4">也代表着我的一部分歉疚</div>
+    <div class="ending-line sub" id="endLine5">—— 永远爱你的 高兴 💕</div>
+  </div>
+
+</div>
+
+<!-- Scroll hint -->
+<div class="scroll-hint" id="scrollHint">
+  <span class="arrow">🦋</span>
+  <span class="hint-text">往下翻，慢慢看</span>
+</div>
+
+<!-- Lightbox -->
+<div class="lightbox" id="lightbox" onclick="closeLightbox()">
+  <button class="close-lb">✕</button>
+  <img id="lightboxImg" src="" alt="">
+</div>
+
+<!-- Easter egg spot (truly hidden) -->
+<div class="easter-egg-spot" id="easterSpot" onclick="clickEgg()" style="opacity:0;width:1px;height:1px;overflow:hidden;position:fixed;bottom:0;right:0;pointer-events:auto;cursor:default;"></div>
+
+<!-- Easter egg modal -->
+<div class="easter-modal" id="easterModal">
+  <div class="content">
+    <div class="big">🦋</div>
+    <h3>被你发现啦 ✨</h3>
+    <p>这个小小的角落藏着一只蝴蝶<br>就像我们的故事里<br>总有一些不期而遇的美好<br><br>谢谢你，看完我们的回忆录 💕</p>
+    <button class="close-easter" onclick="closeEaster()">知道了 🦋</button>
+  </div>
+</div>
+
+<!-- MUSIC PLAYER -->
+<div class="music-player" id="musicPlayer">
+  <div class="progress-wrap" id="progressWrap" onclick="seekTrack(event)">
+    <div class="progress-bar" id="progressBar"></div>
+  </div>
+  <div class="controls-wrap">
+    <button class="ctrl-btn" onclick="prevTrack()">⏮</button>
+    <button class="ctrl-btn play-main" id="mainPlayBtn" onclick="togglePlay()">▶</button>
+    <button class="ctrl-btn" onclick="nextTrack()">⏭</button>
+    <div class="song-info">
+      <span class="song-name" id="playerSong">读心术</span>
+      <span class="song-artist" id="playerArtist">卓文萱</span>
+    </div>
+    <span class="time-display" id="timeDisplay">0:00 / 0:00</span>
+  </div>
+</div>
+<audio id="audioPlayer" preload="auto"></audio>
+
+<script>
+// ===== INIT =====
+const STAR_COUNT = 80;
+const PETAL_COUNT = 20;
+const PETAL_CHARS = ['🌸','💜','🤍','✨','🦋'];
+const SPARKLE_CHARS = ['✦','✧','·'];
+
+function initDecor() {
+  // Stars - more, with color variety
+  const colors = ['#fde68a', '#f9a8d4', '#d8b4fe', '#93c5fd', '#fff'];
+  const sc = document.getElementById('stars');
+  for (let i = 0; i < STAR_COUNT; i++) {
+    const s = document.createElement('div'); s.className = 'star';
+    s.style.left = Math.random() * 100 + '%';
+    s.style.top = Math.random() * 100 + '%';
+    s.style.setProperty('--dur', (2 + Math.random() * 4) + 's');
+    s.style.animationDelay = Math.random() * 6 + 's';
+    s.style.background = colors[Math.floor(Math.random() * colors.length)];
+    s.style.width = (1 + Math.random() * 2) + 'px';
+    s.style.height = s.style.width;
+    sc.appendChild(s);
+  }
+  // Sparkles (small floating dots)
+  for (let i = 0; i < 15; i++) {
+    const sp = document.createElement('div');
+    sp.textContent = SPARKLE_CHARS[Math.floor(Math.random() * SPARKLE_CHARS.length)];
+    sp.style.cssText = `position:fixed;z-index:1;pointer-events:none;
+      left:${Math.random()*95+2}%;top:${Math.random()*95+2}%;
+      font-size:${0.3+Math.random()*0.3}em;
+      color:rgba(249,168,212,${0.05+Math.random()*0.1});
+      animation:sparkle ${3+Math.random()*4}s ease-in-out infinite alternate;
+      animation-delay:${Math.random()*5}s;`;
+    document.body.appendChild(sp);
+  }
+  // Petals - more variety
+  const pr = document.getElementById('petalRain');
+  for (let i = 0; i < PETAL_COUNT; i++) {
+    const p = document.createElement('div'); p.className = 'falling-petal';
+    p.textContent = PETAL_CHARS[Math.floor(Math.random() * PETAL_CHARS.length)];
+    p.style.left = Math.random() * 100 + '%';
+    p.style.setProperty('--size', (0.4 + Math.random() * 0.5) + 'em');
+    p.style.setProperty('--dur', (12 + Math.random() * 10) + 's');
+    p.style.setProperty('--delay', Math.random() * 15 + 's');
+    p.style.setProperty('--sway', (Math.random() * 80 - 40) + 'px');
+    pr.appendChild(p);
+  }
+}
+
+// ===== INTRO SEQUENCE =====
+function startIntro() {
+  const lines = [
+    document.getElementById('introLine0'),
+    document.getElementById('introLine1'),
+    document.getElementById('introLine2'),
+    document.getElementById('introLine3'),
+    document.getElementById('introHint'),
+    document.getElementById('introBtn')
+  ];
+  lines.forEach((el, i) => {
+    setTimeout(() => el.classList.add('show'), 400 + i * 800);
+  });
+}
+
+document.getElementById('introBtn').addEventListener('click', function() {
+  const overlay = document.getElementById('introOverlay');
+  overlay.classList.add('fade-out');
+  setTimeout(() => {
+    overlay.classList.add('hidden');
+    document.getElementById('mainContent').classList.add('show');
+    document.getElementById('scrollHint').classList.add('show');
+    initScrollObserver();
+    setTimeout(() => startEnding(), 500);
+    setTimeout(() => {
+      document.getElementById('scrollHint').classList.remove('show');
+    }, 15000);
+  }, 1500);
+  // Start music immediately on user click — browser allows it
+  if (!window._musicStarted) {
+    window._musicStarted = true;
+    initMusic();
+    audio.play().catch(() => {});  // play right in the click event
+  }
+});
+
+// ===== SCROLL OBSERVER =====
+function initScrollObserver() {
+  const cards = document.querySelectorAll('.memory-card');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+      }
+    });
+  }, { threshold: 0.15, rootMargin: '0px 0px -50px 0px' });
+  
+  cards.forEach(card => observer.observe(card));
+}
+
+// ===== LIGHTBOX =====
+function openLightbox(src) {
+  const img = document.getElementById('lightboxImg');
+  img.src = src;
+  img.className = src.includes('new_01') ? 'rotate-left' : '';
+  document.getElementById('lightbox').classList.add('show');
+}
+function closeLightbox() {
+  document.getElementById('lightbox').classList.remove('show');
+}
+document.getElementById('lightbox').addEventListener('click', function(e) {
+  if (e.target === this) closeLightbox();
+});
+
+// ===== ENDING SEQUENCE =====
+let endingStarted = false;
+function startEnding() {
+  if (endingStarted) return;
+  const endSection = document.getElementById('endingSection');
+  
+  const checkScroll = () => {
+    const rect = endSection.getBoundingClientRect();
+    if (rect.top < window.innerHeight * 0.6) {
+      if (!endingStarted) {
+        endingStarted = true;
+        // Darken background
+        endSection.classList.add('darken');
+        
+        // Show lines one by one
+        for (let i = 0; i <= 5; i++) {
+          const el = document.getElementById('endLine' + i);
+          setTimeout(() => {
+            el.classList.add('show');
+          }, 400 + i * 1000);
+        }
+        window.removeEventListener('scroll', checkScroll);
+      }
+    }
+  };
+  
+  // Also try immediately if already visible
+  checkScroll();
+  window.addEventListener('scroll', checkScroll);
+}
+
+// ===== EASTER EGG =====
+let eggClickCount = 0;
+// Secret easter egg: click the section title "我们的故事" 7 times
+document.querySelector('.section-title h2')?.addEventListener('click', function() {
+  eggClickCount++;
+  if (eggClickCount >= 7) {
+    showEaster();
+    eggClickCount = 0;
+  }
+});
+
+// Also: the bottom-right invisible spot as backup
+function clickEgg() {
+  eggClickCount++;
+  if (eggClickCount >= 7) {
+    showEaster();
+    eggClickCount = 0;
+  }
+}
+
+function showEaster() {
+  document.getElementById('easterModal').classList.add('show');
+}
+function closeEaster() {
+  document.getElementById('easterModal').classList.remove('show');
+}
+
+// ===== MEMORY DATA =====
+// Old 9 photos (slightly adjusted descriptions)
+const OLD_MEMORIES = [
+  { file: 'old_01.jpg', emoji: '🤍💫', text: '我们的日常，平淡却最珍贵。每一个平凡的日子因为有你都变得闪闪发亮。' },
+  { file: 'old_02.jpg', emoji: '🐶💜', text: '在大理去狗咖的那天。你蹲在地上喂狗狗们，它们围着你转、你笑得特别开心——那个画面比任何风景都好看。' },
+  { file: 'old_03.jpg', emoji: '👸💗', text: '在大理拍了超美的照片，像迪士尼在逃公主一样美丽——你站在那儿，每一帧都像画报一样，我怎么都看不够。' },
+  { file: 'old_04.jpg', emoji: '📸💕', text: '在大理拍的美照，特别漂亮。你站在那儿，阳光刚好落在你身上——你说你特别喜欢这一张，我也是，怎么看都看不够。' },
+  { file: 'old_05.jpg', emoji: '💑💫', text: '在大理一起拍的合照。我们互相望着对方笑，那一刻好像旁边的一切都不存在了——只有你和我。' },
+  { file: 'old_06.jpg', emoji: '🌊🤍', text: '一起在大理拍的合照。洱海边、阳光下，我们靠在一起——每一张都是我最珍惜的画面。' },
+  { file: 'old_07.jpg', emoji: '📚🥤', text: '一起期末复习的时候，点了茉酸奶一起喝。你吸着酸奶皱着眉头看题的样子，又认真又可爱——那段日子虽然累，但有你在就很好。' },
+  { file: 'old_08.jpg', emoji: '🎂🎉', text: '我第一次给你过生日的照片。当时精心准备了惊喜，你看到的时候眼睛都亮了——那一刻我心里比什么都开心。' },
+  { file: 'old_09.jpg', emoji: '💌🤍', text: '写不尽的回忆。还有很多很多没来得及记录的美好时刻——每一帧，都好好收在心里了。' }
+];
+
+// New 33 photos with user's descriptions (beautified)
+// Photo index (1-33) mapped to description index (0-32 per user's JSON)
+const MATCH = {
+  1:5, 2:0, 3:1, 4:3, 5:4, 6:6, 7:7, 8:8, 9:9, 10:10,
+  11:11, 12:12, 13:13, 14:15, 15:16, 16:30, 17:17, 18:18, 19:19, 20:20,
+  21:21, 22:22, 23:31, 24:23, 25:24, 26:26, 27:27, 28:29, 29:28, 30:14,
+  31:2, 32:32, 33:25
+};
+
+// Descriptions (0-indexed, beautified)
+const NEW_DESCS = [
+  { emoji: '🧩💗', text: '我们一起拼积木。过程很波折，零件撒了一地，拼了拆、拆了又拼，但最后完成的时候特别有成就感——就像我们，跌跌撞撞却依然美好。' },
+  { emoji: '✈️🚄', text: '牵着手一起坐飞机、坐火车。无论是飞上云端还是穿过田野，只要手是牵着的，去哪儿都是风景。' },
+  { emoji: '🏔️📷', text: '在大理，我们选到了超级满意的海景房，面对着洱海。阳光透过窗子洒进来，你站在窗边回头对我笑——那一瞬间我就知道，这趟旅行值得一辈子记住。' },
+  { emoji: '🛒💕', text: '一起玩超市。看着超市从一个小摊慢慢扩张，货架越来越满，就像我们的感情，一点一点在积累、在生长。' },
+  { emoji: '🎡📸', text: '一起去游乐园拍了拍立得。照片慢慢浮现出我们笑容的瞬间——每一张都是独一无二的宝物。' },
+  { emoji: '🎢🌅', text: '在过山车上看日落。俯冲的时候你紧紧抓着我的手尖叫，夕阳把整片天空染成橘粉色——刺激和浪漫，同一天都体验到了。' },
+  { emoji: '📝🤭', text: '你考试的时候我偷偷拍你。你专注写题的样子特别认真，眉头偶尔皱一下——我在后面偷偷笑了好久，好可爱啊。' },
+  { emoji: '🎂🎉', text: '一周年的惊喜蛋糕。他悄悄准备的，但不小心被我提前发现了——不过看到蛋糕的那一刻还是很开心，蛋糕很甜，但心意更甜。' },
+  { emoji: '🧖‍♀️♟️', text: '洗头的时候你坐在沙发上，聚精会神地玩着"五子棋"。头发还包着毛巾，一脸认真的样子——那个画面，我能记一辈子。' },
+  { emoji: '🚗💥', text: '我们一起开碰碰车。你一边尖叫一边乱转方向盘，撞到我的时候笑得特别大声——公园里到处都是你的笑声。' },
+  { emoji: '🎈💕', text: '我为你准备的惊喜表白。吹了好多好多气球，布置了很久很久。你推开门那一刻的表情，是我这辈子见过最美的画面。' },
+  { emoji: '🌾🎮', text: '我们一起玩星露谷。一起种地、钓鱼、下矿洞，你负责规划农场布局，我负责打架——最好的搭档，无论在游戏里还是现实中。' },
+  { emoji: '🎵📸', text: '面对难题，我们互相安慰、一起想办法。你给我的鼓励和拥抱，是那个时候最温暖的力量。最后器乐社大家一起拍了大合照——那段日子，我很怀念。' },
+  { emoji: '🍵🥩', text: '一起出去围炉煮茶、吃烤肉。炭火暖暖的，茶香混着肉香，你一边喊烫一边往嘴里塞——这种烟火气里的幸福，最真实。' },
+  { emoji: '📱🍳', text: '异地的时候打视频看你做饭、洗碗。你把手机靠在调料瓶上，一边炒菜一边跟我聊天——隔着屏幕都觉得好可爱，好想马上飞到你身边。' },
+  { emoji: '🧁✨', text: '我们一起做的小蛋糕。面粉撒得到处都是，我们做的蛋糕歪歪扭扭的——但那是世界上最好吃的蛋糕。' },
+  { emoji: '🏯📷', text: '和翔翔一起去古镇，给你拍古风照片。你穿着古装站在桥上的样子，像从画里走出来的人——快门按下的每一帧都是珍藏。' },
+  { emoji: '🚶‍♂️💫', text: '牵着手一起远行。不管去哪里，只要你在身边，陌生的城市也变得温暖。我们一起走过的路，每一步都算数。' },
+  { emoji: '🎤✨', text: '一起看活的薛之谦！全场大合唱的时候你激动的样子，你跟着哼唱的声音——那场演出，是我陪你看过最棒的演唱会。' },
+  { emoji: '⛸️❄️', text: '我们一起溜冰。你扶着栏杆慢慢挪的样子又好笑又可爱，摔倒了坐在地上笑得停不下来——冰场很冷，但心里暖暖的。' },
+  { emoji: '🚗🏫', text: '她陪我考了雅思。考完之后我们坐上了川大的校园观光车，微风拂过，你靠在我身边——那一刻觉得，能和你一起真好。' },
+  { emoji: '🎢🎠', text: '第一次一起去欢乐谷玩。你从过山车上下来腿都软了还笑着说"好好玩"，拉着我又去排下一个项目——跟你在一起，什么都想尝试。' },
+  { emoji: '🌧️🌿', text: '下过雨后的学校，空气里都是青草的味道。我们牵着手一起散步，踩过水洼的时候你笑着跑开——那个傍晚，特别美好。' },
+  { emoji: '💕👕', text: '一起去挑新衣服。你穿着我的外套，戴着我送你的发卡，靠在我肩膀上的时候——那个时候，我感觉自己是世界上最幸福的人。' },
+  { emoji: '🥩😂', text: '和沙汉一起去吃烤肉。他烤的肉味道确实还可以，就是烤的时候手忙脚乱的样子特别搞笑——笑得我们肚皮都疼了。' },
+  { emoji: '🧣💗', text: '我们的故事，跟半块粉色的暖手宝密切相关。冬天你总是手凉，我把它塞到你手里，你笑着说"一人一半"——从那以后，很多东西都是一人一半了。' },
+  { emoji: '🐱💖', text: '一起去猫咖。你蹲在地上喂猫的样子、轻声细语跟猫咪说话的样子——太可爱了。猫咪们围着你转，但在我眼里，你比所有猫咪都可爱一万倍。' },
+  { emoji: '☀️😌', text: '一起在操场晒太阳。你躺在我腿上，阳光暖暖地照在身上，你眯着眼睛像一只晒太阳的小猫——那个下午安安静静的，却是我最珍惜的时刻之一。' },
+  { emoji: '🌅📸', text: '给你拍了日落剪影。你站在夕阳里的轮廓，金色的光勾勒出你的侧脸——我当时觉得特别好看哈哈哈哈哈哈，那可能是我拍过最好的照片。' },
+  { emoji: '🎤💪', text: '偷偷拍你打辩论的样子。你在台上侃侃而谈、逻辑清晰、气场全开——那一刻觉得你好厉害，心里特别佩服。' },
+  { emoji: '👫📋', text: '一起去做社会实践。住的环境比较糟糕，太阳也很大，每天跑下来真的很累——但你一直在我身边，再累也值得。' },
+  { emoji: '💐✨', text: '你给我买的花花。每次你捧着花出现在我面前的时候，花很漂亮，但你眼睛亮亮的样子更漂亮——你送的花，我全都好好收着了。' },
+  { emoji: '🏛️🎉', text: '我们四个人放假去三星堆玩。青铜面具前我们各种搞怪，四个人一起玩得特别开心——和你们在一起，快乐都加倍了。' },
+];
+
+// Build all memories (old + new)
+function buildMemories() {
+  const container = document.getElementById('memoryContainer');
+  
+  // Final order based on user's sorting (position 1 & 2 swapped)
+  const ORDER = [
+    ['new',33], ['new',28], ['new',29], ['new',26], ['new',27],
+    ['new',32], ['new',25], ['new',24], ['new',23], ['new',22],
+    ['new',21], ['new',20], ['new',19],
+    ['old',7],  ['old',6],
+    ['new',18], ['new',17], ['new',16],
+    ['old',8],
+    ['new',15], ['new',14], ['new',30], ['new',13], ['new',12],
+    ['new',11], ['new',10], ['new',9],  ['new',7],  ['new',6],
+    ['new',1],  ['new',5],
+    ['old',0],  ['old',1],  ['old',2],  ['old',3],
+    ['old',4],  ['old',5],
+    ['new',4],  ['new',31], ['new',2],  ['new',3]
+  ];
+  
+  ORDER.forEach((item, idx) => {
+    const [type, ref] = item;
+    let mem;
+    
+    if (type === 'old') {
+      const m = OLD_MEMORIES[ref];
+      // Full width for certain old photos
+      const isFull = [0, 4, 8].includes(ref);
+      mem = { file: m.file, emoji: m.emoji, text: m.text, type: 'old', isFull };
+    } else {
+      const descIdx = MATCH[ref];
+      const desc = NEW_DESCS[descIdx];
+      const ext = ref === 1 ? 'png' : 'jpg';
+      mem = {
+        file: `new_${String(ref).padStart(2, '0')}.${ext}`,
+        emoji: desc.emoji,
+        text: desc.text,
+        type: 'new',
+        num: ref,
+        isFull: false
+      };
+    }
+    
+    const card = document.createElement('div');
+    card.className = 'memory-card';
+    if (idx % 2 === 1) card.classList.add('reverse');
+    if (mem.isFull) card.classList.add('full-width');
+    
+    card.innerHTML = `
+      <div class="photo-wrap" onclick="openLightbox('photos/${mem.file}')">
+        <img src="photos/${mem.file}" alt="回忆" loading="lazy" class="${mem.num === 1 ? 'rotate-left' : ''}">
+        <span class="photo-num">${mem.type === 'old' ? '💕' : '#' + mem.num}</span>
+      </div>
+      <div class="desc-wrap">
+        <div class="emoji-row">${mem.emoji}</div>
+        <div class="memory-divider"></div>
+        <div class="memory-text">${mem.text}</div>
+      </div>
+    `;
+    container.appendChild(card);
+  });
+}
+
+// ===== MUSIC PLAYER (HTML5 Audio + Local MP3s) =====
+const SONGS = [
+  { name: '读心术', artist: '卓文萱', file: '01_读心术.mp3' },
+  { name: '将故事写成我们', artist: '林俊杰', file: '02_将故事写成我们.mp3' }
+];
+
+let currentTrack = 0;
+let isPlaying = false;
+const audio = document.getElementById('audioPlayer');
+const playBtn = document.getElementById('mainPlayBtn');
+const progressBar = document.getElementById('progressBar');
+
+function loadTrack(idx) {
+  currentTrack = (idx + SONGS.length) % SONGS.length;
+  const s = SONGS[currentTrack];
+  audio.src = 'music/' + s.file;
+  document.getElementById('playerSong').textContent = s.name;
+  document.getElementById('playerArtist').textContent = s.artist;
+  audio.load();
+  if (isPlaying) audio.play();
+  updateTimeDisplay();
+}
+
+function togglePlay() {
+  if (audio.src.endsWith('/')) { loadTrack(0); }
+  if (audio.paused) {
+    audio.play();
+  } else {
+    audio.pause();
+  }
+}
+
+function nextTrack() { loadTrack(currentTrack + 1); }
+function prevTrack() { loadTrack(currentTrack - 1); }
+
+function seekTrack(e) {
+  const wrap = document.getElementById('progressWrap');
+  const pct = (e.clientX - wrap.getBoundingClientRect().left) / wrap.offsetWidth;
+  if (audio.duration) {
+    audio.currentTime = pct * audio.duration;
+  }
+}
+
+function updateTimeDisplay() {
+  const m = Math.floor(audio.currentTime / 60);
+  const s = Math.floor(audio.currentTime % 60);
+  const tm = Math.floor(audio.duration / 60) || 0;
+  const ts = Math.floor(audio.duration % 60) || 0;
+  document.getElementById('timeDisplay').textContent =
+    `${m}:${String(s).padStart(2,'0')} / ${tm}:${String(ts).padStart(2,'0')}`;
+  if (audio.duration) {
+    progressBar.style.width = (audio.currentTime / audio.duration * 100) + '%';
+  }
+}
+
+// Audio events
+audio.addEventListener('play', () => { isPlaying = true; playBtn.textContent = '⏸'; });
+audio.addEventListener('pause', () => { isPlaying = false; playBtn.textContent = '▶'; });
+audio.addEventListener('ended', () => nextTrack());
+audio.addEventListener('timeupdate', updateTimeDisplay);
+audio.addEventListener('loadedmetadata', updateTimeDisplay);
+audio.volume = 0.25;
+
+function initMusic() {
+  // Audio source already preloaded, just play
+  audio.play().catch(() => {});
+}
+
+// ===== START =====
+// Preload first track before any user interaction
+loadTrack(0);
+
+// Wait for audio to be ready before enabling the button
+audio.addEventListener('canplaythrough', function onReady() {
+  audio.removeEventListener('canplaythrough', onReady);
+  const btn = document.getElementById('introBtn');
+  btn.disabled = false;
+  btn.style.opacity = '';
+  btn.style.cursor = '';
+  btn.textContent = '🌸 打开回忆';
+  document.getElementById('introHint').textContent = '🎵 音乐已准备好，点进去就会自动播放～记得先调好音量哦';
+});
+
+initDecor();
+buildMemories();
+startIntro();
+
+// Also handle escape key for lightbox
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    closeLightbox();
+    closeEaster();
+  }
+});
+</script>
+</body>
+</html>
